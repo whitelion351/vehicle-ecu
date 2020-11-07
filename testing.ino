@@ -25,7 +25,7 @@ const int throttle_input = A0;
   // Ignition outputs
 unsigned int ign_dwell_time = 50000;
 const byte coila = 5;
-bool coila_enabled = false;
+const bool coila_enabled = false;
 const byte coilb = 6;
 bool coilb_enabled = false;
 const byte coilc = 7;
