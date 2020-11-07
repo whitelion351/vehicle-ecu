@@ -21,7 +21,7 @@ except serial.SerialException:
 class MainWindow(tk.Tk):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.title("Liontronic v0.2a")
+        self.title("Liontronic v0.5a")
         self.update_delay = 0.2
         self.canvas = tk.Canvas(self, width=615, height=600, bg="#555555")
         self.canvas.pack()
