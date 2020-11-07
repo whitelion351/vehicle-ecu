@@ -4,4 +4,4 @@
 
 .py file is written for python 3.6
 
-This is no where near the finished project. There is a base framework for Arduino <-> PC communication. Only the data for fuel injector times are being sent and displayed. TKinter is the GUI framework. 
+Base functionality is implemented. Arduino <-> PC communication, fuel and ignition timing, decoding the CKP... its all there. Still much more work needed but with the right circuit to grab the crank signal and mosfets for the outputs, this should actually run an engine (v6 mustang).
