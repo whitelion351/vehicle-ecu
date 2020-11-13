@@ -9,19 +9,19 @@ class FuelWindow:
         self.height = 120
         self.root = root
         self.font = ("helvetica", 10)
-        self.fuel_base = 0
+        self.fuel_duration = 0
         self.fuel_trim = 0
         # Background Frame
         self.deck_frame = tk.Frame(root, width=self.width, height=self.height, bd=10, relief="ridge")
 
         # Fuel Base Time Label
-        self.fuel_base_title = tk.Label(self.deck_frame, font=self.font, text="BASE")
-        self.fuel_base_title.place(x=10, y=5, width=60, height=14)
-        self.fuel_base_label_var = tk.StringVar()
-        self.fuel_base_label_var.set("0000 us")
-        self.fuel_base_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
-                                        textvariable=self.fuel_base_label_var)
-        self.fuel_base_label.place(x=10, y=20, width=60, height=14)
+        self.fuel_duration_title = tk.Label(self.deck_frame, font=self.font, text="INJ TIME")
+        self.fuel_duration_title.place(x=10, y=5, width=60, height=14)
+        self.fuel_duration_label_var = tk.StringVar()
+        self.fuel_duration_label_var.set("0000 us")
+        self.fuel_duration_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
+                                            textvariable=self.fuel_duration_label_var)
+        self.fuel_duration_label.place(x=10, y=20, width=60, height=14)
 
         # Fuel Trim Label
         self.fuel_trim_title = tk.Label(self.deck_frame, font=self.font, text="TRIM")
@@ -43,9 +43,16 @@ class FuelWindow:
         self.trim_up_button.place(x=200, y=20, width=40, height=14)
 
         # Duty Cycle Meter
+        self.duty_cycle_title = tk.Label(self.deck_frame, font=self.font, text="DUTY")
+        self.duty_cycle_title.place(x=513, y=5, width=50, height=14)
         self.duty_cycle_image = self.create_duty_cycle_image()
         self.duty_cycle_image_display = tk.Label(self.deck_frame, image=self.duty_cycle_image)
-        self.duty_cycle_image_display.place(x=560, y=5, width=10, height=90)
+        self.duty_cycle_image_display.place(x=560, y=0, width=10, height=100)
+        self.duty_cycle_percent_label_var = tk.StringVar()
+        self.duty_cycle_percent_label_var.set("0")
+        self.duty_cycle_percent_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
+                                                 textvariable=self.duty_cycle_percent_label_var)
+        self.duty_cycle_percent_label.place(x=519, y=50, width=40, height=14)
 
     @staticmethod
     def create_duty_cycle_image():
@@ -58,9 +65,14 @@ class FuelWindow:
     def update_duty_cycle_image(self):
         v_size = 50
         new_image = np.zeros((v_size, 1, 3), dtype=np.int8)
-        fuel_base_index = int((self.fuel_base / 100) * v_size) * -1
-        fuel_base_index = abs(fuel_base_index + v_size)
-        fuel_base_index = min(fuel_base_index, v_size - 1)
-        new_image[fuel_base_index:, 0, 1] = 255
-        vol_image = Image.fromarray(new_image, "RGB").resize((10, 70))
-        return ImageTk.PhotoImage(vol_image)
+        total_time = (1 / (self.root.overview_window.engine_rpm / 60 / 2)) * 1000000
+        dc_fraction = (self.fuel_duration / total_time)
+        dc_percent = round(dc_fraction * 100, ndigits=1)
+        self.duty_cycle_percent_label_var.set(str(dc_percent))
+        fuel_dur_index = int(dc_fraction * -v_size)
+        fuel_dur_index = abs(fuel_dur_index + v_size)
+        fuel_dur_index -= 1
+        fuel_dur_index = min(fuel_dur_index, v_size - 1)
+        new_image[fuel_dur_index:, 0, 1] = 255
+        final_image = Image.fromarray(new_image, "RGB").resize((10, 100))
+        return ImageTk.PhotoImage(final_image)
