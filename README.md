@@ -1,7 +1,16 @@
-# vehicle-ecu
+# Vehicle-ECU
+testing.ino - Arduino sketch. Written for the Uno though this may change.
 
-.ino file is an Arduino sketch. Currently using an Uno though I may upgrade to get more digital I/O pins.
+main.py file - Python 3.6 file. 
 
-.py file is written for python 3.6
+Upload the sketch to any atmega328. Read the top of the sketch for what pins do what.
 
-Base functionality is implemented. Arduino <-> PC communication, fuel and ignition timing, decoding the CKP... its all there. Still much more work needed but with the right circuit to grab the crank signal and mosfets for the outputs, this should actually run an engine (v6 mustang).
+# Features
+Arduino <-> PC serial communication
+
+Can decode most toothed wheel crankshaft signals (at least those that I have seen). Signal must already be conditioned (0-5v square wave).
+
+Fuel and ignition advance maps as well as on-the-fly adjustment.
+
+# Note
+This was written with the intention of running it on a 99 Mustang V6. It is capable of running any v6 engine using a wasted spark ignition system, and can be adapted for other types or cylinder counts. Inline or V-Engine should not matter.
