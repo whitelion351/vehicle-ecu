@@ -65,9 +65,14 @@ class FuelWindow:
     def update_duty_cycle_image(self):
         v_size = 50
         new_image = np.zeros((v_size, 1, 3), dtype=np.int8)
-        total_time = (1 / (self.root.overview_window.engine_rpm / 60 / 2)) * 1000000
-        dc_fraction = (self.fuel_duration / total_time)
-        dc_percent = round(dc_fraction * 100, ndigits=1)
+        if self.root.overview_window.engine_rpm != 0:
+            total_time = (1 / (self.root.overview_window.engine_rpm / 60 / 2)) * 1000000
+            dc_fraction = (self.fuel_duration / total_time)
+            dc_percent = round(dc_fraction * 100, ndigits=1)
+        else:
+            total_time = 100
+            dc_fraction = (1 / total_time)
+            dc_percent = round(dc_fraction * 100, ndigits=1)
         self.duty_cycle_percent_label_var.set(str(dc_percent))
         fuel_dur_index = int(dc_fraction * -v_size)
         fuel_dur_index = abs(fuel_dur_index + v_size)

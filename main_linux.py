@@ -6,11 +6,13 @@ from OverviewWindow import OverviewWindow
 from FuelWindow import FuelWindow
 from IgnitionWindow import IgnitionWindow
 
+# /dev/ttyUSB0 or similar for linux, COM7 or similar for windows
+serial_port = "/dev/ttyUSB0"
 user_input = ""
 serial_connected = False
 
 try:
-    ser = serial.Serial(baudrate=115200, port="COM7")
+    ser = serial.Serial(baudrate=115200, port=serial_port)
     serial_connected = True
 except serial.SerialException:
     print("could not connect to ecu com port")
@@ -22,7 +24,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.title("Liontronic v1.0a")
-        self.update_delay = 0.1
+        self.update_delay = 0.2
         self.canvas = tk.Canvas(self, width=615, height=600, bg="#555555")
         self.canvas.pack()
         self.resizable(width=False, height=False)
@@ -32,7 +34,7 @@ class MainWindow(tk.Tk):
         self.fuel_window.deck_frame.place(x=10, y=140)
         self.ignition_window = IgnitionWindow(self)
         self.ignition_window.deck_frame.place(x=10, y=270)
-        self.weight = 1179  # this should be in kilograms
+        self.weight = 2600  # this should be in kilograms
         self.tire_radius = 0.351  # this should be in meters
 
     @staticmethod
@@ -56,7 +58,7 @@ class MainWindow(tk.Tk):
 
     @staticmethod
     def send_data(com=bytes([0]), data=bytes([0, 0])):
-        com_to_send = bytes([255]) + com + data
+        com_to_send = com + data
         try:
             for b in com_to_send:
                 if type(b) == int:
@@ -83,9 +85,6 @@ class MainWindow(tk.Tk):
                     # 0x05 = throttle_pos
                     # 0x06 = engine_rpm
                     # 0x07 = engine_rpm_max
-                    com = ser.read(size=1)
-                    if com != bytes([255]):  # make sure we're synced up in the data stream
-                        continue
                     com = ser.read(size=1)
                     # next 2 bytes are the 16bit signed value
                     raw = ser.read(size=2)
@@ -162,7 +161,7 @@ class MainWindow(tk.Tk):
             torque_n_m = (((self.overview_window.velocity_change * self.update_delay) * self.weight) * self.tire_radius)
             torque_ft_lbs = int(torque_n_m * 0.7375621493)
             horsepower = int((torque_ft_lbs * value) / 5252)
-            # print("RPM:", self.overview_window.engine_rpm, "HP:", horsepower, "T:", torque_ft_lbs)
+            print("RPM:", self.overview_window.engine_rpm, "HP:", horsepower, "T:", torque_ft_lbs)
             self.overview_window.engine_rpm = value
             self.overview_window.engine_rpm_label_var.set(str(value))
         elif name == "engine_rpm_max":
@@ -180,7 +179,6 @@ class MainWindow(tk.Tk):
         self.send_data(com=bytes([0]), data=bytes([0, 2]))
         self.send_data(com=bytes([0]), data=bytes([0, 4]))
         self.send_data(com=bytes([0]), data=bytes([0, 7]))
-        sleep(1)
         while ser is not None:
             sleep(self.update_delay)
             self.send_data(com=bytes([0]), data=bytes([1, 0]))
