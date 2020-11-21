@@ -1,3 +1,4 @@
+# v1.1a
 import serial
 from time import sleep
 from threading import Thread
@@ -6,11 +7,13 @@ from OverviewWindow import OverviewWindow
 from FuelWindow import FuelWindow
 from IgnitionWindow import IgnitionWindow
 
+# "COM7" or similar for windows, "/dev/ttyUSB0" or similar for linux
+serial_port = "COM7"
 user_input = ""
 serial_connected = False
 
 try:
-    ser = serial.Serial(baudrate=115200, port="COM7")
+    ser = serial.Serial(baudrate=115200, port=serial_port)
     serial_connected = True
 except serial.SerialException:
     print("could not connect to ecu com port")
@@ -21,8 +24,8 @@ except serial.SerialException:
 class MainWindow(tk.Tk):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.title("Liontronic v1.0a")
-        self.update_delay = 0.1
+        self.title("Liontronic v1.1a")
+        self.update_delay = 0.2
         self.canvas = tk.Canvas(self, width=615, height=600, bg="#555555")
         self.canvas.pack()
         self.resizable(width=False, height=False)
@@ -121,13 +124,19 @@ class MainWindow(tk.Tk):
             if value2 == 0:
                 if value1 == 0:
                     self.overview_window.sync_status_label_var.set("Searching")
-                else:
+                    self.overview_window.sync_losses += 1
+                    self.overview_window.sync_losses_label_var.set(str(self.overview_window.sync_losses))
+                elif value1 == 1:
                     self.overview_window.sync_status_label_var.set("Locked")
+                else:
+                    self.overview_window.sync_status_label_var.set("?!!")
             elif value2 == 1:
                 if value1 == 0:
                     self.overview_window.limiter_status_label_var.set("Normal")
-                else:
+                elif value1 == 1:
                     self.overview_window.limiter_status_label_var.set("Active")
+                else:
+                    self.overview_window.limiter_status_label_var.set("?!!")
         elif name == "fuel_duration":
             self.fuel_window.fuel_duration = value
             self.fuel_window.fuel_duration_label_var.set(str(value))

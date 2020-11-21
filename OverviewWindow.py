@@ -1,3 +1,4 @@
+# v1.1a
 import tkinter as tk
 
 
@@ -10,6 +11,7 @@ class OverviewWindow:
         self.status = "testing"
         self.engine_rpm = 500
         self.engine_rpm_max = 5500
+        self.sync_losses = 0
         self.velocity_change = 0
 
         self.throttle_pos = 0
@@ -62,14 +64,23 @@ class OverviewWindow:
                                           textvariable=self.sync_status_label_var)
         self.sync_status_label.place(x=80, y=80, width=60, height=14)
 
+        # Sync Losses Label
+        self.sync_losses_title = tk.Label(self.deck_frame, font=self.font, fg="#000000", text="L")
+        self.sync_losses_title.place(x=141, y=65, width=30, height=14)
+        self.sync_losses_label_var = tk.StringVar()
+        self.sync_losses_label_var.set(self.sync_losses)
+        self.sync_losses_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
+                                          textvariable=self.sync_losses_label_var)
+        self.sync_losses_label.place(x=141, y=80, width=30, height=14)
+
         # Limiter Status Label
         self.limiter_status_title = tk.Label(self.deck_frame, font=self.font, fg="#000000", text="LIMITER")
-        self.limiter_status_title.place(x=150, y=65, width=60, height=14)
+        self.limiter_status_title.place(x=180, y=65, width=60, height=14)
         self.limiter_status_label_var = tk.StringVar()
         self.limiter_status_label_var.set(self.status)
         self.limiter_status_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
                                              textvariable=self.limiter_status_label_var)
-        self.limiter_status_label.place(x=150, y=80, width=60, height=14)
+        self.limiter_status_label.place(x=180, y=80, width=60, height=14)
 
     def calculate_degrees_from_advance_in_us(self, advance_in_us=0):
         single_rev_time = (1 / (self.engine_rpm / 60)) * 1000000

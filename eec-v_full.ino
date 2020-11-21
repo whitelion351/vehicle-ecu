@@ -1,7 +1,5 @@
 // 99 Mustang V6 with EEC-V
-// v1.0a
-
-// Using bike fuel control module as a test bed. final pins may be different.
+// v1.1a
 
 #define portOfPin(P)(((P)>=0&&(P)<8)?&PORTD:(((P)>7&&(P)<14)?&PORTB:&PORTC))
 #define ddrOfPin(P)(((P)>=0&&(P)<8)?&DDRD:(((P)>7&&(P)<14)?&DDRB:&DDRC))
@@ -20,8 +18,6 @@
 
 // digital inputs
 const byte crank_input = 3; // input from the crankshaft sensor. should already be conditioned (0-5v).
-const byte test_signal = 4; // test signal that can be routed to crank input to test the system
-                            //it is generated using timer1 of the atmega328. you'll see below.
 
 //analog inputs
 const int throttle_input = A1;  //throttle input 0-5v
@@ -29,11 +25,11 @@ const int throttle_input = A1;  //throttle input 0-5v
 // Ignition outputs
 unsigned int ign_dwell_time = 3000;
 const byte coila = 9;
-bool coila_enabled = false;
+bool coila_enabled = true;
 const byte coilb = 10;
-bool coilb_enabled = false;
+bool coilb_enabled = true;
 const byte coilc = 11;
-bool coilc_enabled = false;
+bool coilc_enabled = true;
 byte current_coil = 0;
 
 // Injector outputs
@@ -55,10 +51,9 @@ unsigned long tooth_times[tooth_count - 1] = {};
 volatile bool crank_toggle = false;
 
 // Other parameters
-int engine_rpm = 600;
-int engine_rpm_max = 5500;
+unsigned int engine_rpm = 0;
+unsigned int engine_rpm_max = 5500;
 bool over_rev = false;
-bool do_engine_calc = false;
 bool signal_sync = false;
 
 unsigned long ign_advance_in_us = 0;
@@ -98,17 +93,17 @@ int fuel_table[11][11] = {
 int ignition_table[11][11] = {
   // x axis = rpm 500 inc
   // y axis = throttle percent 10 inc
-  {10, 10, 12, 2, 3, 3, 4, 4, 5, 5, 6},
-  {10, 10, 12, 2, 3, 3, 4, 4, 5, 5, 6},
-  {10, 10, 12, 2, 3, 3, 4, 4, 5, 5, 6},
-  {10, 10, 12, 2, 3, 3, 4, 4, 5, 5, 6},
-  {10, 10, 12, 2, 3, 3, 4, 4, 5, 5, 6},
-  {12, 12, 13, 3, 4, 4, 5, 5, 6, 6, 7},
-  {12, 12, 13, 3, 4, 4, 5, 5, 6, 6, 7},
-  {12, 12, 13, 3, 4, 4, 5, 5, 6, 6, 7},
-  {12, 12, 13, 3, 4, 4, 5, 5, 6, 6, 7},
-  {12, 12, 13, 3, 4, 4, 5, 5, 6, 6, 7},
-  {14, 13, 14, 4, 5, 5, 6, 6, 7, 7, 8}
+  {10, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {10, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {10, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {10, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {12, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {12, 10, 12, 12, 13, 13, 14, 14, 15, 15, 16},
+  {12, 24, 28, 32, 34, 36, 38, 40, 40, 40, 40},
+  {12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17},
+  {14, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17},
+  {14, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17},
+  {14, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18}
 };
 
 void crank_interrupt() {
@@ -126,10 +121,6 @@ void crank_interrupt() {
     tooth_times[current_tooth - 1] = duration;
     if (current_tooth != tooth_count - 1) {
       last_crank_duration = duration;
-      if (last_crank_duration > 0) {
-        engine_rpm = ((1000000 / (last_crank_duration * 36)) * 60);
-        engine_calc();
-      }
     }
     else { check_sync(); }
   }
@@ -138,8 +129,6 @@ void crank_interrupt() {
 void setup() {
   Serial.begin(115200);
   pinMode(crank_input, INPUT);
-  pinMode(test_signal, OUTPUT);
-  digitalLow(test_signal);
   digitalLow(13);
   digitalLow(coila);
   digitalLow(coilb);
@@ -148,40 +137,6 @@ void setup() {
   digitalLow(inj2);
   digitalLow(inj3);
   attachInterrupt(digitalPinToInterrupt(crank_input), crank_interrupt, FALLING);
-
-  TCCR1A = 0;// set entire TCCR1A register to 0
-  TCCR1B = 0;// same for TCCR1B
-  TCNT1  = 0;//initialize counter value to 0
-  // set compare match register
-  OCR1A = 5000;// = (16*10^6) / (1*1024) - 1 (must be <65536)
-  // turn on CTC mode
-  TCCR1B |= (1 << WGM12);
-  // Set CS10 bit for /1 prescaler
-  TCCR1B |= (1 << CS10); //  | (1 << CS12)
-  // enable timer compare interrupt
-  TIMSK1 |= (1 << OCIE1A);
-}
-
-byte teeth = 36;
-volatile byte tooth = 18;
-volatile bool sig_up = false;
-
-ISR(TIMER1_COMPA_vect) {
-  if (sig_up) {
-    digitalLow(test_signal);
-    sig_up = false;
-  }
-  else {
-    if (tooth + 1 == teeth) {
-      tooth = 0;
-      sig_up = true;
-    }
-    else {
-      tooth += 1;
-      digitalHigh(test_signal);
-      sig_up = true;
-    }
-  }
 }
 
 int calculate_advance_from_deg(int deg) {
@@ -221,6 +176,21 @@ void check_sync() {
   }
 }
 
+void get_inputs() {
+  // get throttle input
+  throttle_pos = analogRead(throttle_input);
+  throttle_percent = ((throttle_pos + 1) / 1024.0) * 100;
+
+  // get fuel needed from throttle and rpm
+  byte throttle_index = throttle_percent / 10;
+  if (throttle_index > 10) {throttle_index = 10;}
+  byte rpm_index = engine_rpm / 500;
+  if (rpm_index > 10) {rpm_index = 10;}
+  inj_duration = fuel_table[throttle_index][rpm_index] + inj_trim;
+  ign_advance_in_us = calculate_advance_from_deg(ignition_table[throttle_index][rpm_index] + ign_advance_trim_in_deg);
+  engine_rpm = ((1000000 / (last_crank_duration * 36)) * 60);
+}
+
 void engine_calc() {
   if (engine_rpm >= engine_rpm_max) {
       if (!over_rev) {
@@ -238,31 +208,23 @@ void engine_calc() {
         over_rev = false;
       }
   }
-  // get throttle input
-  throttle_pos = analogRead(throttle_input);
-  throttle_percent = ((throttle_pos + 1) / 1024.0) * 100;
-
-  // get fuel needed from throttle and rpm
-  byte throttle_index = throttle_percent / 10;
-  byte rpm_index = engine_rpm / 500;
-  inj_duration = fuel_table[throttle_index][rpm_index] + inj_trim;
-  ign_advance_in_us = calculate_advance_from_deg(ignition_table[throttle_index][rpm_index] + ign_advance_trim_in_deg);
-
   if (signal_sync && !over_rev) {
-    unsigned long tdc = last_crank_time + (last_crank_duration * 7);
     if (current_tooth == tooth_count - 2) {
+      unsigned long tdc = last_crank_time + (last_crank_duration * 7);
       current_coil = coila;
       inja = inj1;
       injb = inj5;
       set_times(tdc);
     }
     else if (current_tooth == 11) {
+      unsigned long tdc = last_crank_time + (last_crank_duration * 7);
       current_coil = coilc;
       inja = inj3;
       injb = inj4;
       set_times(tdc);
     }
     else if (current_tooth == 23) {
+      unsigned long tdc = last_crank_time + (last_crank_duration * 7);
       current_coil = coilb;
       inja = inj2;
       injb = inj6;
@@ -287,6 +249,14 @@ void loop() {
 
   if (signal_sync) { do_coils_and_inj(micros()); }
   else { press_the_panic_button(); }
+  if (current_tooth == tooth_count - 2) {
+    get_inputs();
+    engine_calc();
+  }
+  else if (current_tooth == 11 || current_tooth == 23) {
+    engine_calc();
+  }
+
 }
 
 void press_the_panic_button() {
