@@ -1,5 +1,6 @@
-# v1.1a
+# v1.2a
 import tkinter as tk
+from TableWindow import TableWindow
 
 
 class IgnitionWindow:
@@ -8,7 +9,10 @@ class IgnitionWindow:
         self.height = 120
         self.root = root
         self.font = ("helvetica", 10)
-        self.status = "-"
+        self.ignition_map_rows = 11
+        self.ignition_map_cols = 11
+        self.ignition_map_raw = [0 for _ in range(self.ignition_map_rows*self.ignition_map_cols)]
+
         # Background Frame
         self.deck_frame = tk.Frame(root, width=self.width, height=self.height, bd=10, relief="ridge")
 
@@ -54,3 +58,11 @@ class IgnitionWindow:
         self.trim_up_button = tk.Button(self.deck_frame, font=self.font, text="+1",
                                         command=lambda: self.root.send_data(com=bytes([2]), data=bytes([0, 1])))
         self.trim_up_button.place(x=200, y=35, width=40, height=14)
+
+        # Spark Map Button
+        self.spark_map_button = tk.Button(self.deck_frame, font=self.font, text="MAP TABLE",
+                                          command=self.display_table_window)
+        self.spark_map_button.place(x=250, y=35, width=80, height=15)
+
+    def display_table_window(self):
+        TableWindow(self.root, "SPARK TABLE")

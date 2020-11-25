@@ -1,7 +1,8 @@
-# v1.1a
+# v1.2a
 import tkinter as tk
 from PIL import Image, ImageTk
 import numpy as np
+from TableWindow import TableWindow
 
 
 class FuelWindow:
@@ -12,6 +13,10 @@ class FuelWindow:
         self.font = ("helvetica", 10)
         self.fuel_duration = 0
         self.fuel_trim = 0
+        self.fuel_map_rows = 11
+        self.fuel_map_cols = 11
+        self.fuel_map_raw = [0 for _ in range(self.fuel_map_rows*self.fuel_map_cols)]
+
         # Background Frame
         self.deck_frame = tk.Frame(root, width=self.width, height=self.height, bd=10, relief="ridge")
 
@@ -43,6 +48,11 @@ class FuelWindow:
                                         command=lambda: self.root.send_data(com=bytes([1]), data=bytes([0, 1])))
         self.trim_up_button.place(x=200, y=20, width=40, height=14)
 
+        # Fuel Map Button
+        self.fuel_map_button = tk.Button(self.deck_frame, font=self.font, text="MAP TABLE",
+                                         command=self.display_table_window)
+        self.fuel_map_button.place(x=250, y=20, width=80, height=14)
+
         # Duty Cycle Meter
         self.duty_cycle_title = tk.Label(self.deck_frame, font=self.font, text="DUTY")
         self.duty_cycle_title.place(x=513, y=5, width=50, height=14)
@@ -54,6 +64,9 @@ class FuelWindow:
         self.duty_cycle_percent_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
                                                  textvariable=self.duty_cycle_percent_label_var)
         self.duty_cycle_percent_label.place(x=519, y=50, width=40, height=14)
+
+    def display_table_window(self):
+        TableWindow(self.root, "FUEL TABLE")
 
     @staticmethod
     def create_duty_cycle_image():

@@ -1,5 +1,7 @@
-# v1.1a
+# v1.2a
 import tkinter as tk
+import numpy as np
+from PIL import Image, ImageTk
 
 
 class OverviewWindow:
@@ -81,6 +83,42 @@ class OverviewWindow:
         self.limiter_status_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
                                              textvariable=self.limiter_status_label_var)
         self.limiter_status_label.place(x=180, y=80, width=60, height=14)
+
+        # HP and Torque Graph
+        self.hp_graph_title_var = tk.StringVar()
+        self.hp_graph_title_var.set("HP(red) TORQUE(blue)")
+        self.hp_graph_title = tk.Label(self.deck_frame, font=self.font, fg="#FFFFFF", bg="#000000",
+                                       textvariable=self.hp_graph_title_var)
+        self.hp_graph_title.place(x=250, y=5, width=320, height=14)
+        self.hp_graph_values = []
+        self.hp_graph_img = self.create_graph_image()
+        self.hp_graph = tk.Label(self.deck_frame, font=self.font, bg="#000000", image=self.hp_graph_img)
+        self.hp_graph.place(x=250, y=20, width=320, height=70)
+
+    def update_graph(self, hp, t):
+        self.hp_graph_img = self.update_graph_image(hp, t)
+        self.hp_graph_title_var.set(f"{hp} HP(red) {t} TORQUE(blue)")
+        self.hp_graph.configure(image=self.hp_graph_img)
+
+    def create_graph_image(self):
+        v_size = 70
+        h_size = 320
+        self.hp_graph_values = np.zeros((v_size, h_size, 3), dtype=np.int8)
+        self.hp_graph_values[35, :, 1] = 255
+        self.hp_graph_values[:, 160, 0] = 255
+        graph_image = Image.fromarray(self.hp_graph_values, "RGB").resize((320, 70))
+        return ImageTk.PhotoImage(graph_image)
+
+    def update_graph_image(self, hp, t):
+        self.hp_graph_values[:, :-1, :] = self.hp_graph_values[:, 1:, :]
+        val = (70 / 300)
+        hp_pos = int((val * hp) * -1) + 69
+        t_pos = int((val * t) * -1) + 69
+        self.hp_graph_values[:, -1, :] = 0
+        self.hp_graph_values[hp_pos, -1:, 0] = 255
+        self.hp_graph_values[t_pos, -1:, 2] = 255
+        graph_image = Image.fromarray(self.hp_graph_values, "RGB").resize((320, 70))
+        return ImageTk.PhotoImage(graph_image)
 
     def calculate_degrees_from_advance_in_us(self, advance_in_us=0):
         single_rev_time = (1 / (self.engine_rpm / 60)) * 1000000

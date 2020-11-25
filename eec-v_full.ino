@@ -317,11 +317,13 @@ void get_serial() {
   //        0x05 - throttle_pos
   //        0x06 - engine_rpm
   //        0x07 - engine_rpm_max
+  //        0x08 - fuel_table
+  //        0x09 - ignition_table
   // 0x01 - adjust fuel_trim
   // 0x02 - adjust_ignition_advance
   // 0x03 - adjust_engine_rpm_max
   byte input = Serial.read();
-  if (input != 0xff) { return; }
+  if (input != 0xff) { return; } // keeps data synced
   input = Serial.read();
   if (input == 0x00) { // requesting data
     byte input1 = Serial.read();
@@ -363,6 +365,26 @@ void get_serial() {
     else if (input2 == 0x07) { // engine_rpm_max
       byte to_send[3] = {input2, byte(engine_rpm_max), byte(engine_rpm_max >> 8)};
       add_to_serial(to_send, 3);
+    }
+    else if (input2 == 0x08) { // fuel_map
+      int total = 11*11;
+      byte to_send[total] = {input2, byte(total), byte(total >> 8)};
+      for(byte x = 0; x < 11; x++) {
+        for (byte y = 0; y < 11; y++) {
+          to_send[3 +(x*11)+y] = byte(fuel_table[x][y] / 100);
+        }
+      }
+      add_to_serial(to_send, 3+total);
+    }
+    else if (input2 == 0x09) { // ignition_map
+      int total = 11*11;
+      byte to_send[total] = {input2, byte(total), byte(total >> 8)};
+      for(byte x = 0; x < 11; x++) {
+        for (byte y = 0; y < 11; y++) {
+          to_send[3 +(x*11)+y] = byte(ignition_table[x][y]);
+        }
+      }
+      add_to_serial(to_send, 3+total);
     }
   }
   else if (input == 0x01) {
