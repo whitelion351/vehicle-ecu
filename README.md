@@ -10,6 +10,8 @@ tooth_wheel_generator.ino - Arduino Sketch. Generates a crankshaft signal of var
 
 main.py - Monitor and Tuning software written in Python 3.6.
 
+ecu_sch-v1.0a.sch - Schematic for the ECU. Created with KiCad
+
 
 Upload the sketch to any atmega328. Read the top of the sketch for what pins do what.
 
