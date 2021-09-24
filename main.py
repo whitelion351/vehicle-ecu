@@ -7,9 +7,9 @@ from OverviewWindow import OverviewWindow
 from FuelWindow import FuelWindow
 from IgnitionWindow import IgnitionWindow
 
-# "COM7" or similar for windows, "/dev/ttyUSB0" or similar for linux
-# serial_port = "COM7"
-serial_port = "/dev/ttyUSB0"
+# "COM5" or similar for windows, "/dev/ttyUSB0" or similar for linux
+serial_port = "COM5"
+# serial_port = "/dev/ttyUSB0"
 user_input = ""
 serial_connected = False
 
@@ -120,7 +120,6 @@ class MainWindow(tk.Tk):
                     elif com == bytes([8]):
                         app_window.update_data("fuel_table", value_unsigned)
                     elif com == bytes([9]):
-                        print("receive ignition table")
                         app_window.update_data("ignition_table", value_unsigned)
                 except UnicodeDecodeError as e:
                     print("error receiving data", e)
@@ -192,7 +191,7 @@ class MainWindow(tk.Tk):
             # then horsepower
             horsepower = int((torque_ft_lbs * value) / 5252)
             self.overview_window.update_graph(horsepower, torque_ft_lbs)
-            print("RPM:", self.overview_window.engine_rpm, "HP:", horsepower, "T:", torque_ft_lbs)
+            # print("RPM:", self.overview_window.engine_rpm, "HP:", horsepower, "T:", torque_ft_lbs)
             self.overview_window.engine_rpm = value
             self.overview_window.engine_rpm_label_var.set(str(value))
         elif name == "engine_rpm_max":
@@ -211,7 +210,7 @@ class MainWindow(tk.Tk):
 
     def win_update_func(self):
         print("window update thread started")
-        sleep(2)  # wait for arduino to reboot
+        sleep(1.5)  # wait for arduino to reboot
         # get initial parameters that are not updated constantly
         # fuel trim, ignition trim, rpm limit
         self.send_data(com=bytes([0]), data=bytes([0, 0]))  # status flag
@@ -219,11 +218,11 @@ class MainWindow(tk.Tk):
         self.send_data(com=bytes([0]), data=bytes([0, 2]))  # the global fuel trim
         self.send_data(com=bytes([0]), data=bytes([0, 4]))  # the global spark trim
         self.send_data(com=bytes([0]), data=bytes([0, 7]))  # engine_rpm_max variable
-        sleep(0.3)
+        sleep(0.1)
         self.send_data(com=bytes([0]), data=bytes([0, 8]))  # request the fuel map
-        sleep(0.3)
+        sleep(0.1)
         self.send_data(com=bytes([0]), data=bytes([0, 9]))  # request the ignition map
-        sleep(0.3)
+        sleep(0.1)
         while ser is not None:
             sleep(self.update_delay)
             self.send_data(com=bytes([0]), data=bytes([1, 0]))  # limiter flag (shouldn't be needed. fix later)
@@ -235,16 +234,17 @@ class MainWindow(tk.Tk):
                 im = self.fuel_window.update_duty_cycle_image()
                 self.fuel_window.duty_cycle_image_display.configure(image=im)
                 y_pos = int(float(self.fuel_window.duty_cycle_percent_label_var.get()))
-                y_pos = (y_pos * -1) + 100
+                y_pos = (y_pos * -1) + 95
                 self.fuel_window.duty_cycle_percent_label.place(anchor="w", y=y_pos)
 
 
-app_window = MainWindow()
+if __name__ == "__main__":
+    app_window = MainWindow()
 
-window_update_thread = Thread(name="win_update_thread", target=app_window.win_update_func, daemon=True)
-window_update_thread.start()
-comm_receive_thread = Thread(name="receive_thread", target=app_window.receive_data, daemon=True)
-comm_receive_thread.start()
-comm_send_thread = Thread(name="user_input_thread", target=app_window.get_user_input, daemon=True)
-comm_send_thread.start()
-app_window.mainloop()
+    window_update_thread = Thread(name="win_update_thread", target=app_window.win_update_func, daemon=True)
+    window_update_thread.start()
+    comm_receive_thread = Thread(name="receive_thread", target=app_window.receive_data, daemon=True)
+    comm_receive_thread.start()
+    comm_send_thread = Thread(name="user_input_thread", target=app_window.get_user_input, daemon=True)
+    comm_send_thread.start()
+    app_window.mainloop()

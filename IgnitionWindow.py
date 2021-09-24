@@ -11,7 +11,7 @@ class IgnitionWindow:
         self.font = ("helvetica", 10)
         self.ignition_map_rows = 11
         self.ignition_map_cols = 11
-        self.ignition_map_raw = [0 for _ in range(self.ignition_map_rows*self.ignition_map_cols)]
+        self.ignition_map_raw = [bytes([0]) for _ in range(self.ignition_map_rows*self.ignition_map_cols)]
 
         # Background Frame
         self.deck_frame = tk.Frame(root, width=self.width, height=self.height, bd=10, relief="ridge")
@@ -23,7 +23,7 @@ class IgnitionWindow:
 
         # Ignition Advance Label
         self.ignition_advance_us_title = tk.Label(self.deck_frame, font=self.font, text="ADV (uS)")
-        self.ignition_advance_us_title.place(x=10, y=5, width=60, height=14)
+        self.ignition_advance_us_title.place(x=10, y=4, width=60, height=15)
         self.ignition_advance_us_label_var = tk.StringVar()
         self.ignition_advance_us_label_var.set("0")
         self.ignition_advance_us_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
@@ -34,6 +34,8 @@ class IgnitionWindow:
         self.ignition_advance_deg_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
                                                    textvariable=self.ignition_advance_deg_label_var)
         self.ignition_advance_deg_label.place(x=10, y=35, width=60, height=14)
+        self.ignition_advance_deg_title = tk.Label(self.deck_frame, font=self.font, text="ADV (deg)")
+        self.ignition_advance_deg_title.place(x=10, y=50, width=60, height=16)
 
         # Ignition Advance Trim Label
         self.ignition_advance_trim_us_title = tk.Label(self.deck_frame, font=self.font, text="TRIM (uS)")
@@ -48,6 +50,8 @@ class IgnitionWindow:
         self.ignition_advance_trim_deg_label = tk.Label(self.deck_frame, font=self.font, bg="#000000", fg="#FFFFFF",
                                                         textvariable=self.ignition_advance_trim_deg_label_var)
         self.ignition_advance_trim_deg_label.place(x=80, y=35, width=60, height=14)
+        self.ignition_advance_trim_deg_title = tk.Label(self.deck_frame, font=self.font, text="TRIM (deg)")
+        self.ignition_advance_trim_deg_title.place(x=80, y=50, width=63, height=16)
 
         # Trim Down Button
         self.trim_down_button = tk.Button(self.deck_frame, font=self.font, text="-1",
@@ -60,9 +64,9 @@ class IgnitionWindow:
         self.trim_up_button.place(x=200, y=35, width=40, height=14)
 
         # Spark Map Button
-        self.spark_map_button = tk.Button(self.deck_frame, font=self.font, text="MAP TABLE",
+        self.spark_map_button = tk.Button(self.deck_frame, font=self.font, text="SPARK MAP",
                                           command=self.display_table_window)
-        self.spark_map_button.place(x=250, y=35, width=80, height=15)
+        self.spark_map_button.place(x=250, y=35, width=90, height=15)
 
     def display_table_window(self):
         TableWindow(self.root, "SPARK TABLE")

@@ -96,24 +96,32 @@ class OverviewWindow:
         self.hp_graph.place(x=250, y=20, width=320, height=70)
 
     def update_graph(self, hp, t):
-        self.hp_graph_img = self.update_graph_image(hp, t)
         self.hp_graph_title_var.set(f"{hp} HP(red) {t} TORQUE(blue)")
+        self.hp_graph_img = self.update_graph_image(hp, t)
         self.hp_graph.configure(image=self.hp_graph_img)
 
     def create_graph_image(self):
-        v_size = 70
+        v_size = 36
         h_size = 320
         self.hp_graph_values = np.zeros((v_size, h_size, 3), dtype=np.int8)
-        self.hp_graph_values[35, :, 1] = 255
+        self.hp_graph_values[18, :, 1] = 255
         self.hp_graph_values[:, 160, 0] = 255
         graph_image = Image.fromarray(self.hp_graph_values, "RGB").resize((320, 70))
         return ImageTk.PhotoImage(graph_image)
 
     def update_graph_image(self, hp, t):
         self.hp_graph_values[:, :-1, :] = self.hp_graph_values[:, 1:, :]
-        val = (70 / 300)
-        hp_pos = int((val * hp) * -1) + 69
-        t_pos = int((val * t) * -1) + 69
+        val = (36 / 1000)
+        hp_pos = int((val * hp) * -1) + 35
+        if hp_pos < 0:
+            hp_pos = 0
+        if hp_pos > 35:
+            hp_pos = 35
+        t_pos = int((val * t) * -1) + 35
+        if t_pos < 0:
+            t_pos = 0
+        if t_pos > 35:
+            t_pos = 35
         self.hp_graph_values[:, -1, :] = 0
         self.hp_graph_values[hp_pos, -1:, 0] = 255
         self.hp_graph_values[t_pos, -1:, 2] = 255
